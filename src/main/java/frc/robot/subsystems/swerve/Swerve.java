@@ -4,7 +4,6 @@ import frc.lib.math.GeometryUtils;
 import frc.robot.LimelightHelpers;
 import frc.robot.RobotContainer;
 import frc.robot.SwerveConstants;
-import frc.robot.commands.DriveToAprilTag;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -89,15 +88,6 @@ public class Swerve extends SubsystemBase {
 
     public Swerve() {
 
-        LimelightHelpers.setCameraPose_RobotSpace("", 
-        0.47465,    // Forward offset (meters)
-        -0.15,    // Side offset (meters)
-        0.23495,    // Height offset (meters)
-    0.0,    // Roll (degrees)
-    6.64,   // Pitch (degrees)
-    0.0     // Yaw (degrees)
-        );
-
         SmartDashboard.putData("Field", field2d);
         gyro = new AHRS(NavXComType.kMXP_SPI); // (May need to change this: NavXUpdateRate.k200Hz) 
         //gyro.configFactoryDefault();
@@ -120,7 +110,7 @@ public class Swerve extends SubsystemBase {
 
         swerveOdometry = new SwerveDriveOdometry(SwerveConfig.swerveKinematics, gyro.getRotation2d(), getModulePositions());
         zeroGyro();
-        /*Good Job =D */
+        
         RobotConfig config;
             try {
                 config = RobotConfig.fromGUISettings();
@@ -253,7 +243,7 @@ public class Swerve extends SubsystemBase {
         }
 
     }    
-    /* Used by SwerveControllerCommand in Auto */
+    
     public void setModuleStates(SwerveModuleState[] desiredStates) {
 
        // System.out.println("setting module states: "+desiredStates[0]);
@@ -336,23 +326,7 @@ public class Swerve extends SubsystemBase {
         }
         System.out.println("Auto-zeroing wheels completed.");
     }
-    /* 
-    public void autonDrive(double s){
-        if (mSwerveMods[0].getModuleNumber() == 0){
-            mSwerveMods[0].setSpeed2(s);
-        }
-        if (mSwerveMods[1].getModuleNumber() == 1){
-            mSwerveMods[1].setSpeed2(s*-1);
-        }
-        if (mSwerveMods[2].getModuleNumber() == 2){
-            mSwerveMods[2].setSpeed2(s);
-        }
-        if (mSwerveMods[3].getModuleNumber() == 3){
-            mSwerveMods[3].setSpeed2(s*-1);
-        }
-
-    }
-    */
+    
     @Override
     public void periodic() {
         updateOdometry();
