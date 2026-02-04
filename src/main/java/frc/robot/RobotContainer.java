@@ -23,9 +23,12 @@ import frc.robot.subsystems.ArmStuff.Actuator2;
 import frc.robot.subsystems.ArmStuff.Climber;
 import frc.robot.subsystems.ArmStuff.Elevator;
 import frc.robot.subsystems.ArmStuff.Shooter;
+import frc.robot.subsystems.swerve.DistanceInterpolator;
+import frc.robot.subsystems.swerve.TurretConstants;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 
@@ -40,32 +43,27 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
- */
+
 public class RobotContainer {
 
     private final SendableChooser<Command> autoChooser;
 
-    /* Swerve SubSystem */
+    
     public Swerve getSwerveSubsystem(){
         return s_Swerve;
     }
     
-    /* Controllers */
+    
     private final Joystick driver = new Joystick(0);
     private final Joystick upper = new Joystick(1);
 
 
-   /* Driver Controls */
+   
 	private final int translationAxis = XboxController.Axis.kLeftY.value;
 	private final int strafeAxis = XboxController.Axis.kLeftX.value;
 	private final int rotationAxis = XboxController.Axis.kRightX.value;
 
-    /* Upper Controls */
+    
     private final int wristMove = XboxController.Axis.kRightY.value;
     //private final int pickUp = XboxController.Axis.kLeftY.value;
     private final int elevatorMove = XboxController.Axis.kLeftY.value;
@@ -74,16 +72,16 @@ public class RobotContainer {
     //private final int climbUp = XboxController.Axis.kRightY.value;
     private final int actuator2Move = XboxController.Axis.kLeftY.value;
 
-    /* Upper Buttons */
+    
     //private final JoystickButton shooterSpeedOne = new JoystickButton(upper, XboxController.Button.kA.value);
-    //private final JoystickButton retractActuator = new JoystickButton(upper, XboxController.Button.kB.value);
+    private final JoystickButton turretAutoAimButton = new JoystickButton(upper, XboxController.Button.kA.value);
     private final JoystickButton elevatorSetPoint1 = new JoystickButton(upper, XboxController.Button.kB.value);
     private final JoystickButton shooterBackward = new JoystickButton(upper, XboxController.Button.kLeftBumper.value);
     private final JoystickButton shooterForward = new JoystickButton(upper, XboxController.Button.kRightBumper.value);
     private final JoystickButton wristSetPoint1 = new JoystickButton(upper, XboxController.Button.kY.value);
     private final JoystickButton wristSetPoint2 = new JoystickButton(upper, XboxController.Button.kX.value);
 
-    /* Driver Buttons */
+    
     private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kX.value);
     private final JoystickButton extendActuator = new JoystickButton(driver, XboxController.Button.kB.value);
     private final JoystickButton retractActuator = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
@@ -95,7 +93,7 @@ public class RobotContainer {
     private final POVButton right = new POVButton(driver, 180);
     private final POVButton left = new POVButton(driver, 0);
 
-    /* Subsystems */
+    
     private final Swerve s_Swerve = new Swerve();
     private final Shooter shooter = new Shooter();
     private final Actuator2 actuator2 = new Actuator2();
@@ -108,11 +106,18 @@ public class RobotContainer {
     //private final Command auton = new AutonRun(s_Swerve);
 
 
-    /** The container for the robot. Contains subsystems, OI devices, and commands. */
+    
     public RobotContainer() {
         // Register Named Commands
         registerNamedCommands();
         
+        turretAutoAimButton.whileTrue(
+            new AimTurretCommand(
+                s_Swerve,
+                () -> new Translation2d(-driver.getRawAxis(translationAxis), -driver.getRawAxis(strafeAxis))
+            )
+        );
+
         s_Swerve.setDefaultCommand(
             new TeleopSwerve(
                 s_Swerve, 
@@ -160,26 +165,7 @@ public class RobotContainer {
             )
         );
         
-        /* 
-        pickUpper.setDefaultCommand(
-            new PickerUp(
-                pickUpper,
-                () -> upper.getRawAxis(movePickUpArm),
-                () -> upper.getRawAxis(pickUp),
-                () -> pickUpFloorPoint.getAsBoolean(),
-                () -> fastMode.getAsBoolean()
-            )
-        );
         
-        actuator.setDefaultCommand(
-            new ActuatorRun(
-                actuator,
-                () -> upper.getRawAxis(shooterAim),
-                () -> actuatorZero.getAsBoolean(),
-                () -> actuatorShoot.getAsBoolean()
-            )
-        );
-         */
         
         climb.setDefaultCommand(
             new Climb(
@@ -189,14 +175,7 @@ public class RobotContainer {
             )
         );
     
-        /*
-        s_Swerve.setDefaultCommand(
-            new ZeroWheels(
-                s_Swerve,
-                () -> zeroWheels.getAsBoolean()
-            )
-        );
-        */
+        
         
         // Configure the button bindings
         configureButtonBindings();
@@ -229,14 +208,12 @@ public class RobotContainer {
     }
 
 
-    /**
-     * Use this method to define your button->command mappings. Buttons can be created by
-     * instantiating a {@link GenericHID} or one of its subclasses ({@link
-     * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-     * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-     */
+    public frc.robot.subsystems.ArmStuff.Shooter getShooter() {
+        return shooter;
+    }
+    
     private void configureButtonBindings() {
-        /* Driver Buttons */
+        
         zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroGyro()));
         
 
@@ -261,11 +238,7 @@ public class RobotContainer {
 
     }
 
-    /**
-     * Use this to pass the autonomous command to the main {@link Robot} class.
-     *
-     * @return the command to run in autonomous
-     */
+    
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();
     }
